@@ -29,7 +29,7 @@ hooks:
         pip install futures && pip install awscli --upgrade --user 2>/dev/null
 ```
 2. Then in the mounts section a folder called drush-backups is needed. 
-3. Structure of the files directory needs to look like this: /docroot/sites/site-name/files. 
+3. Structure of the files directory needs to look like this: /docroot/sites/site-name/files or /web/site/site-name/files. If  
 4. Crons for platform.sh needs to be configured to use the scripts from automatic-backups directory. E.g.:
 ```
 crons:
