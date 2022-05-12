@@ -29,7 +29,7 @@ hooks:
         pip install futures && pip install awscli --upgrade --user 2>/dev/null
 ```
 2. Then in the mounts section a folder called drush-backups is needed. 
-3. Structure of the files directory needs to look like this: /docroot/sites/site-name/files or /web/site/site-name/files. If  
+3. Structure of the files directory needs to look like this: /docroot/sites/site-name/files or /web/sites/site-name/files. If  
 4. Crons for platform.sh needs to be configured to use the scripts from automatic-backups directory. E.g.:
 ```
 crons:
@@ -49,3 +49,10 @@ crons:
    1. There will be a global parent folder with same name as the name set in .platform.app.yml.
    2. Inside it there will be a sql directory which will hold directories for each existing branch, and inside the later one there will be the db files.
    3. Inside the parent directory will also be a folder called files-{site-name} which will hold the files of each site.
+
+6. Clean-up of old backups: 
+   When the script is uploading the db backups on S3 it is also marking them with a certain tag. Dbs from the first day of the month are marked "archive" 
+while all the other ones are marked "rolling". Based on this a lifecycle can be setup on AWS to clean-up old files.
+Instructions on how to create on are here: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html. 
+The rule that need to be added should target object with tag sqldump and value rolling. Set an expiration limit and all the rolling tagged objects will get deleted.
+This won't apply for files directories. They are not tagged and they will get deleted if passed the expiration date. 
