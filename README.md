@@ -54,5 +54,5 @@ crons:
    When the script is uploading the db backups on S3 it is also marking them with a certain tag. Dbs from the first day of the month are marked "archive" 
 while all the other ones are marked "rolling". Based on this a lifecycle can be setup on AWS to clean-up old files.
 Instructions on how to create on are here: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html. 
-The rule that need to be added should target object with tag sqldump and value rolling. Set an expiration limit and all the rolling tagged objects will get deleted.
+The rule that needs to be added should target objects with tag sqldump and value rolling. Set an expiration limit and all the rolling tagged objects will get deleted.
 This won't apply for files directories. They are not tagged and they will get deleted if passed the expiration date. 
