@@ -31,19 +31,27 @@ fi
 if [[ -v AWS_BACKUP_BUCKET ]]; then
   for SITE in `ls -d $SITES_DIR`; do
     SITE=`basename $SITE`
+    database=$SITE
 
-    if [[ $SITE == 'all' ]]; then
-      continue;
-    fi
-    if [[ $SITE == 'default' && $SKIP_DEFAULT ]]; then
+    if [ $SITES_NO -gt 1 ]; then
+      if [[ $SITE == 'all' ]]; then
         continue;
+      fi
+      if [[ $SITE == 'default' && $SKIP_DEFAULT == 'true' ]]; then
+          continue;
+      fi
     fi
 
-    DB_HOST=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${SITE}[0].host")
-    DB_PORT=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${SITE}[0].port")
-    DB_NAME=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${SITE}[0].path")
-    DB_USER=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${SITE}[0].username")
-    DB_PASS=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${SITE}[0].password")
+    # if the site name is not used for database, then default to 'database'.
+    if [[ "$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].host")" == null ]]; then
+      database='database'
+    fi
+
+    DB_HOST=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].host")
+    DB_PORT=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].port")
+    DB_NAME=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].path")
+    DB_USER=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].username")
+    DB_PASS=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].password")
     DUMP_FOLDER=$HOME/drush-backups/${SITE}/$(date +%Y%m%d%H%M%S)
     DUMP_FILE=${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S).sql.gz
     mkdir -p "${DUMP_FOLDER}"

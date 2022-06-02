@@ -29,21 +29,18 @@ hooks:
         pip install futures && pip install awscli --upgrade --user 2>/dev/null
 ```
 2. Then in the mounts section a folder called drush-backups is needed. 
-3. Structure of the files directory needs to look like this: /docroot/sites/site-name/files or /web/sites/site-name/files. If  
+3. Structure of the files directory could look like this: /files/site-name/files, or /docroot/sites/site-name/files, or /web/sites/site-name/files. If  
 4. Crons for platform.sh needs to be configured to use the scripts from automatic-backups directory. E.g.:
 ```
 crons:
     drush-db-backup:
        spec: '0 1 * * *'
-       cmd: |
-       # db backup
-       ./automatic-backups/platform_db_backup.sh
+       cmd: ./automatic-backups/platform_db_backup.sh
     aws-s3-files-daily:
-       spec: '0 1 * * *'
-       cmd: |
-       # upload files to s3
-       ./automatic-backups/files_daily.sh
+       spec: '0 2 * * *'
+       cmd: ./automatic-backups/files_daily.sh
 ```
+Note: better to not run db and files cron at the same time.
 
 5. Structure in S3 bucket will look like this: 
    1. There will be a global parent folder with same name as the name set in .platform.app.yml.
