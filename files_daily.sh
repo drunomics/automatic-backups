@@ -57,7 +57,7 @@ for SITE in `ls -d $SITES_DIR`; do
   fi
 
   # copy files from newly created directory to SFTP.
-  scp -i .ssh/id_rsa.pub -P 50022 -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+  scp -i .ssh/id_rsa.pub -P $SFTP_PORT -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
   # after copying the files remove new-ly created directory.
   find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs -I {} rm -r -v "{}"
 done

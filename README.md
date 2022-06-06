@@ -22,7 +22,8 @@ There are a few variables that need to be setup on platform.sh that are mandator
 3. env:SSH_SECRET_KEY - holds the ssh secret key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
 4. env:SSH_PUBLIC_KEY - holds the ssh public key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
 5. env:SFTP_DIRECTORY - holds the directory from the server where the user has access to copy/create files.
-6. env:SFTP_DAYS_EXP - holds the number of days a backup should be help on the server. When a file passes this
+6. env:SFTP_PORT - holds the port of the server where the user has access to copy/create files.
+7. env:SFTP_DAYS_EXP - holds the number of days a backup should be help on the server. When a file passes this
    expiration date only the files created on first day of the month will be kept.
 
 
