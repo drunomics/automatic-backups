@@ -11,8 +11,8 @@ else
   echo "Using ${SITES_DIR}"
 fi
 
-# check how many sites
-NUMBER_OF_SITES=$(find $SITES_DIR -maxdepth 0 -type d | wc -l)
+# check how many sites (ignore [^ name created by using pattern in mounts)
+NUMBER_OF_SITES=$(find $SITES_DIR -maxdepth 0 -type d ! -name '[^' | wc -l)
 SITES_ALL=$(find $SITES_DIR -maxdepth 0 -name "all" | wc -l)
 SITES_DEFAULT=$(find $SITES_DIR -maxdepth 0 -name "*default" | wc -l)
 
@@ -35,6 +35,11 @@ for SITE in `ls -d $SITES_DIR`; do
     fi
   fi
 
+  # special scenario created by having modular mount for files.
+  if [[ $SITE == '[^' ]]; then
+    continue;
+  fi
+
   if [[ -v AWS_BACKUP_BUCKET ]]; then
     if [ -d "files" ]; then
       DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
@@ -44,20 +49,21 @@ for SITE in `ls -d $SITES_DIR`; do
       DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/docroot/sites/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
     fi
   elif [[ -v SFTP_SERVER ]]; then
+    DAY=$(date -d "-1 day" +%Y-%m)
     # first create directory with files for current day in order to be able to move the folder to SFTP.
     mkdir -p drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}
     echo "Uploading to SFTP server."
     if [ -d "files" ]; then
-      cp -r files/${SITE} ${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}
+      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/files-${DAY}.tar.gz  files/${SITE}
     elif [ -d "web" ]; then
-      cp -r web/sites/${SITE}/files ${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}
+      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/files-${DAY}.tar.gz  web/sites/${SITE}/files
     else
-      cp -r docroot/sites/${SITE}/files ${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}
+      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/files-${DAY}.tar.gz  docroot/sites/${SITE}/files
     fi
   fi
-
-  # copy files from newly created directory to SFTP.
-  scp -i .ssh/id_rsa.pub -P $SFTP_PORT -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
-  # after copying the files remove new-ly created directory.
-  find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs -I {} rm -r -v "{}"
 done
+
+# copy files from newly created directory to SFTP.
+scp -i .ssh/id_rsa.pub -P 50022 -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+# after copying the files remove new-ly created directory.
+find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs -I {} rm -r -v "{}"
