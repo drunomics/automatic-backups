@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
+# check if PROJECT_NAME variable is set, if not, default to $PLATFORM_APPLICATION_NAME.
+if [[ ! -v PROJECT_NAME ]]; then
+  PROJECT_NAME=$PLATFORM_APPLICATION_NAME
+fi
+
+
 function upload_dump_to_s3() {
-    aws s3 mv ${1} s3://${AWS_BACKUP_BUCKET}/${PLATFORM_APPLICATION_NAME}/sql/${PLATFORM_BRANCH}/ --storage-class STANDARD_IA
+    aws s3 mv ${1} s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/sql/${PLATFORM_BRANCH}/ --storage-class STANDARD_IA
     if [ $(date +%d) -eq "01" ]; then SQLDUMP_VALUE=archive; else SQLDUMP_VALUE=rolling; fi
-    KEY="${PLATFORM_APPLICATION_NAME}/sql/${PLATFORM_BRANCH}/$(basename ${1})"
+    KEY="${PROJECT_NAME}/sql/${PLATFORM_BRANCH}/$(basename ${1})"
     aws s3api put-object-tagging --bucket ${AWS_BACKUP_BUCKET} --key ${KEY} --tagging "TagSet=[{Key=sqldump,Value=${SQLDUMP_VALUE}}]"
 }
 
@@ -57,7 +63,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
       if [[ ! -v SFTP_DAYS_EXP ]]; then
         SFTP_DAYS_EXP=180
       fi
-      ssh -p 50022 ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$SITE -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+      ssh -p 50022 ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
     fi
 
     # if the site name is not used for database, then default to 'database'.
@@ -70,7 +76,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
     DB_NAME=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].path")
     DB_USER=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].username")
     DB_PASS=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].password")
-    DUMP_FOLDER=$HOME/drush-backups/${SITE}/$(date +%Y-m%m-d%d)
+    DUMP_FOLDER=$HOME/drush-backups/${PROJECT_NAME}/${SITE}/$(date +%Y-m%m-d%d)
     DUMP_FILE=${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S).sql.gz
     mkdir -p "${DUMP_FOLDER}"
     echo "Creating database dump to ${DUMP_FILE}";
@@ -90,7 +96,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
   # upload backups in bulk to SFTP.
   if [[ -v SFTP_SERVER ]]; then
     echo "Uploading to SFTP server."
-    scp -i .ssh/id_rsa.pub -P 50022 -r ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+    rsync -Parvx -e 'ssh -p 50022' --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
   fi
 
   # clean up remaining files after they have been uploaded

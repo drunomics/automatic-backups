@@ -8,22 +8,24 @@ drupal website to a AWS S3 bucket or to a SFTP server. It works for single and m
 ## Prerequisites
 
 There are a few variables that need to be setup on platform.sh that are mandatory for the script to work.
-1. env:AWS_BACKUP_BUCKET - holds the bucket name. Needs to be available at runtime.
-2. env:AWS_ACCESS_KEY_ID - holds the access key of a user that has access to the bucket. Needs to be available at runtime.
-3. env:AWS_SECRET_ACCESS_KEY - holds the secret access key of a user that has access to the bucket. Needs to be available at runtime. Sensitive information.
+1. env:PROJECT_NAME - holds a specific machine readable name for the project.
+2. env:AWS_BACKUP_BUCKET - holds the bucket name. Needs to be available at runtime.
+3. env:AWS_ACCESS_KEY_ID - holds the access key of a user that has access to the bucket. Needs to be available at runtime.
+4. env:AWS_SECRET_ACCESS_KEY - holds the secret access key of a user that has access to the bucket. Needs to be available at runtime. Sensitive information.
 Having awscli installed on platform.sh environment. 
 
 # Having SFTP server as 3rd party
 
 ## Prerequisites 
 There are a few variables that need to be setup on platform.sh that are mandatory for the script to work.
-1. env:SFTP_SERVER - holds the server name. Needs to be available at runtime.
-2. env:SFTP_USERNAME - holds the user that has access to the server. Needs to be available at runtime.
-3. env:SSH_SECRET_KEY - holds the ssh secret key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
-4. env:SSH_PUBLIC_KEY - holds the ssh public key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
-5. env:SFTP_DIRECTORY - holds the directory from the server where the user has access to copy/create files.
-6. env:SFTP_PORT - holds the port of the server where the user has access to copy/create files.
-7. env:SFTP_DAYS_EXP - holds the number of days a backup should be help on the server. When a file passes this
+1. env:PROJECT_NAME - holds a specific machine readable name for the project.
+2. env:SFTP_SERVER - holds the server name. Needs to be available at runtime.
+3. env:SFTP_USERNAME - holds the user that has access to the server. Needs to be available at runtime.
+4. env:SSH_SECRET_KEY - holds the ssh secret key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
+5. env:SSH_PUBLIC_KEY - holds the ssh public key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
+6. env:SFTP_DIRECTORY - holds the directory from the server where the user has access to copy/create files.
+7. env:SFTP_PORT - holds the port of the server where the user has access to copy/create files.
+8. env:SFTP_DAYS_EXP - holds the number of days a backup should be help on the server. When a file passes this
    expiration date only the files created on first day of the month will be kept.
 
 
@@ -59,7 +61,7 @@ crons:
 Note: better to not run db and files cron at the same time.
 
 5. Structure in S3 bucket will look like this: 
-   1. There will be a global parent folder with same name as the name set in .platform.app.yml.
+   1. There will be a global parent folder with same name as the name set in env:PROJECT_NAME variable .platform.app.yml.
    2. Inside it there will be a sql directory which will hold directories for each existing branch, and inside the later one there will be the db files.
    3. Inside the parent directory will also be a folder called files-{site-name} which will hold the files of each site.
 

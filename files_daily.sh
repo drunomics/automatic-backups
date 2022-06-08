@@ -11,6 +11,11 @@ else
   echo "Using ${SITES_DIR}"
 fi
 
+# check if PROJECT_NAME variable is set, if not, default to $PLATFORM_APPLICATION_NAME.
+if [[ ! -v PROJECT_NAME ]]; then
+  PROJECT_NAME=$PLATFORM_APPLICATION_NAME
+fi
+
 # check how many sites (ignore [^ name created by using pattern in mounts)
 NUMBER_OF_SITES=$(find $SITES_DIR -maxdepth 0 -type d ! -name '[^' | wc -l)
 SITES_ALL=$(find $SITES_DIR -maxdepth 0 -name "all" | wc -l)
@@ -42,23 +47,23 @@ for SITE in `ls -d $SITES_DIR`; do
 
   if [[ -v AWS_BACKUP_BUCKET ]]; then
     if [ -d "files" ]; then
-      DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
+      DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
     elif [ -d "web" ]; then
-      DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/web/sites/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
+      DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/web/sites/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
     else
-      DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/docroot/sites/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
+      DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/docroot/sites/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
     fi
   elif [[ -v SFTP_SERVER ]]; then
     DAY=$(date -d "-1 day" +%Y-%m)
     # first create directory with files for current day in order to be able to move the folder to SFTP.
-    mkdir -p drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
+    mkdir -p drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
     echo "Archiving files."
     if [ -d "files" ]; then
-      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  files/${SITE}
+      tar -zcvf drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  files/${SITE}
     elif [ -d "web" ]; then
-      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  web/sites/${SITE}/files
+      tar -zcvf drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  web/sites/${SITE}/files
     else
-      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  docroot/sites/${SITE}/files
+      tar -zcvf drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  docroot/sites/${SITE}/files
     fi
   fi
 done
@@ -66,7 +71,7 @@ done
 if [[ -v SFTP_SERVER ]]; then
   # copy files from newly created directory to SFTP.
   echo "Uploading archive to server."
-  scp -i .ssh/id_rsa.pub -P 50022 -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+  rsync -Parvx -e 'ssh -p 50022' --progress ./drush-backups/${PROJECT_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
   # after copying the files remove new-ly created directory.
-  find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs --null -I {} rm -r -v "{}"
+  find $HOME/drush-backups/${PROJECT_NAME} -mindepth 1 -type d -print0 |xargs --null -I {} rm -r -v "{}"
 fi
