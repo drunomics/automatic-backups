@@ -51,8 +51,8 @@ for SITE in `ls -d $SITES_DIR`; do
   elif [[ -v SFTP_SERVER ]]; then
     DAY=$(date -d "-1 day" +%Y-%m)
     # first create directory with files for current day in order to be able to move the folder to SFTP.
-    mkdir -p drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}
-    echo "Uploading to SFTP server."
+    mkdir -p drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
+    echo "Archiving files."
     if [ -d "files" ]; then
       tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  files/${SITE}
     elif [ -d "web" ]; then
@@ -65,7 +65,8 @@ done
 
 if [[ -v SFTP_SERVER ]]; then
   # copy files from newly created directory to SFTP.
+  echo "Uploading archive to server."
   scp -i .ssh/id_rsa.pub -P 50022 -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
   # after copying the files remove new-ly created directory.
-  find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs -I {} rm -r -v "{}"
+  find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs --null -I {} rm -r -v "{}"
 fi

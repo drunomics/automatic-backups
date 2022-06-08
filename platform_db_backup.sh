@@ -53,7 +53,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
 
     # get the directories from SFTP that can be deleted because they are old.
     if [[ -v SFTP_DIRECTORY && -v SITE && -v SFTP_SERVER ]]; then
-      echo "Deleting old backups"
+      echo "Checking old backups"
       if [[ ! -v SFTP_DAYS_EXP ]]; then
         SFTP_DAYS_EXP=180
       fi
@@ -94,5 +94,5 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
   fi
 
   # clean up remaining files after they have been uploaded
-  find $HOME/drush-backups -mindepth 1 -type d -print0 |xargs -I {} rm -r -v "{}"
+  find $HOME/drush-backups -mindepth 1 -type d -print0 |xargs --null -I {} rm -r -v "{}"
 fi
