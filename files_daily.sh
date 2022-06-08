@@ -54,16 +54,18 @@ for SITE in `ls -d $SITES_DIR`; do
     mkdir -p drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}
     echo "Uploading to SFTP server."
     if [ -d "files" ]; then
-      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/files-${DAY}.tar.gz  files/${SITE}
+      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  files/${SITE}
     elif [ -d "web" ]; then
-      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/files-${DAY}.tar.gz  web/sites/${SITE}/files
+      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  web/sites/${SITE}/files
     else
-      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/files-${DAY}.tar.gz  docroot/sites/${SITE}/files
+      tar -zcvf drush-backups/${PLATFORM_APPLICATION_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  docroot/sites/${SITE}/files
     fi
   fi
 done
 
-# copy files from newly created directory to SFTP.
-scp -i .ssh/id_rsa.pub -P 50022 -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
-# after copying the files remove new-ly created directory.
-find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs -I {} rm -r -v "{}"
+if [[ -v SFTP_SERVER ]]; then
+  # copy files from newly created directory to SFTP.
+  scp -i .ssh/id_rsa.pub -P 50022 -r ./drush-backups/${PLATFORM_APPLICATION_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+  # after copying the files remove new-ly created directory.
+  find $HOME/drush-backups/${PLATFORM_APPLICATION_NAME} -mindepth 1 -type d -print0 |xargs -I {} rm -r -v "{}"
+fi
