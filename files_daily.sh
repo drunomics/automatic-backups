@@ -57,21 +57,19 @@ for SITE in `ls -d $SITES_DIR`; do
     DAY=$(date -d "-1 day" +%Y-%m)
     # first create directory with files for current day in order to be able to move the folder to SFTP.
     mkdir -p drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
-    echo "Archiving files."
+    rsync -e "ssh -p $SFTP_PORT" -rvxl --progress drush-backups/${PROJECT_NAME} ci@ci2.drunomics.com:~/${SFTP_DIRECTORY}
+    echo "Copying files to server."
     if [ -d "files" ]; then
-      tar -zcvf drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  files/${SITE}
+      rsync -e "ssh -p $SFTP_PORT" -avzl --progress ~/files/${SITE} ci@ci2.drunomics.com:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
     elif [ -d "web" ]; then
-      tar -zcvf drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  web/sites/${SITE}/files
+      rsync -e "ssh -p $SFTP_PORT" -avzl --progress ~/web/sites/${SITE}/files ci@ci2.drunomics.com:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
     else
-      tar -zcvf drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}/files-${DAY}.tar.gz  docroot/sites/${SITE}/files
+      rsync -e "ssh -p $SFTP_PORT" -avzl --progress ~/docroot/sites/${SITE}/files ci@ci2.drunomics.com:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
     fi
   fi
 done
 
 if [[ -v SFTP_SERVER ]]; then
-  # copy files from newly created directory to SFTP.
-  echo "Uploading archive to server."
-  rsync -Parvx -e 'ssh -p 50022' --progress ./drush-backups/${PROJECT_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
   # after copying the files remove new-ly created directory.
   find $HOME/drush-backups/${PROJECT_NAME} -mindepth 1 -type d -print0 |xargs --null -I {} rm -r -v "{}"
 fi

@@ -63,7 +63,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
       if [[ ! -v SFTP_DAYS_EXP ]]; then
         SFTP_DAYS_EXP=180
       fi
-      ssh -p 50022 ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+      ssh -p $SFTP_PORT ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
     fi
 
     # if the site name is not used for database, then default to 'database'.
@@ -96,7 +96,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
   # upload backups in bulk to SFTP.
   if [[ -v SFTP_SERVER ]]; then
     echo "Uploading to SFTP server."
-    rsync -Parvx -e 'ssh -p 50022' --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+    rsync -Parvx -e "ssh -p $SFTP_PORT" --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
   fi
 
   # clean up remaining files after they have been uploaded
