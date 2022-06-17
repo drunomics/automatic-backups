@@ -14,6 +14,7 @@ There are a few variables that need to be setup on platform.sh that are mandator
 4. env:AWS_SECRET_ACCESS_KEY - holds the secret access key of a user that has access to the bucket. Needs to be available at runtime. Sensitive information.
 Having awscli installed on platform.sh environment. 
 5. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
+6.  env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
 
 # Having SFTP server as 3rd party
 
@@ -29,6 +30,7 @@ There are a few variables that need to be setup on platform.sh that are mandator
 8. env:SFTP_DAYS_EXP - holds the number of days a backup should be help on the server. When a file passes this
    expiration date only the files created on first day of the month will be kept.
 9. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
+10. env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
 
 
 ## Installation
@@ -79,6 +81,6 @@ Note: better to not run db and files cron at the same time.
    2. SFTP: By default dbs will be help for 180 days unless env:SFTP_DAYS_EXP is set to another value. After this expiration date only the files created on first day of the month will be kept.
 Public file won't expire because there will be just one backup for month.
 8. Ecryption/Decryption
-   1. By default, db backups are encrypted before they are uploaded to the 3rd party storage. In order to decrypt it, access to the platform.sh server is needed in order to get 
-the secret password that was used to encrypt the file. 
+   1. By default, db backups are not encrypted before they are uploaded to the 3rd party storage. In order to enable encryption add variable env:ENABLE_ENCRYPTION with value 1.
+In order to decrypt it, access to the platform.sh server is needed in order to get the secret password that was used to encrypt the file. 
    2. Decryption command: openssl enc -${ENCRYPTION_ALG} -d -in /path/to/encrypted/file -out /path/to/save/decrypted/file -pass file:/path/to/password.

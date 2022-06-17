@@ -43,7 +43,7 @@ if [[ -v SFTP_USERNAME ]]; then
     chmod 600 ~/.ssh/id_rsa.pub
 
    ssh-keygen -f ~/.ssh/id_rsa.pub -e -m PKCS8 > ~/.ssh/id_rsa.pem.pub
-    if [ ! -f ".ssh/secret.key" ]; then
+    if [ ! -f ".ssh/secret.key" ] && [[ $ENABLE_ENCRYPTION == 1 ]]; then
       echo "Generating random secret key."
       openssl rand -out ~/.ssh/secret.key 32
     fi
@@ -87,7 +87,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
     mkdir -p "${DUMP_FOLDER}"
     echo "Creating database dump to ${DUMP_FILE}";
     time mysqldump --max-allowed-packet=16M --single-transaction --skip-opt -e --quick --skip-disable-keys --skip-add-locks -a --add-drop-table --triggers --routines -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" | gzip -9 > "${DUMP_FILE}"
-    if [ -f ".ssh/secret.key" ]; then
+    if [ -f ".ssh/secret.key" ] && [[ $ENABLE_ENCRYPTION == 1 ]]; then
       # encrypt the db backup.
       if [[ -v ENCRYPTION_ALG ]]; then
         echo "Encrypting backup at ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz"
