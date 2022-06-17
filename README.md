@@ -14,7 +14,8 @@ There are a few variables that need to be setup on platform.sh that are mandator
 4. env:AWS_SECRET_ACCESS_KEY - holds the secret access key of a user that has access to the bucket. Needs to be available at runtime. Sensitive information.
 Having awscli installed on platform.sh environment. 
 5. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
-6.  env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
+6. env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
+7. env:SECRET_ENC_PASS - should contain a string password that will encrypt/decrypt the backups.
 
 # Having SFTP server as 3rd party
 
@@ -31,6 +32,7 @@ There are a few variables that need to be setup on platform.sh that are mandator
    expiration date only the files created on first day of the month will be kept.
 9. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
 10. env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
+11. env:SECRET_ENC_PASS - should contain a string password that will encrypt/decrypt the backups.
 
 
 ## Installation
