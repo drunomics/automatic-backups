@@ -88,7 +88,11 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
         openssl enc -${ENCRYPTION_ALG} -salt -in $DUMP_FILE -out ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz -pass pass:$SECRET_ENC_PASS
         # delete the unencrypted file so that it doesn't get uploaded to the server.
         rm $DUMP_FILE
+      else
+        echo "Encryption failed because ENCRYPTION_ALG variable is not set."
       fi
+    else
+      echo "Encryption failed because SECRET_ENC_PASS variable is not set or because encryption is disabled."
     fi
     echo "DONE"
 
