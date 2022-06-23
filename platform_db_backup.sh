@@ -36,11 +36,11 @@ fi
 
 # if sftp, prepare ssh keys.
 if [[ -v SFTP_USERNAME ]]; then
-    mkdir -p ~/.ssh
-    echo "${SSH_SECRET_KEY}" > ~/.ssh/id_rsa
-    echo "${SSH_PUBLIC_KEY}" > ~/.ssh/id_rsa.pub
-    chmod 600 ~/.ssh/id_rsa
-    chmod 600 ~/.ssh/id_rsa.pub
+    mkdir -p $HOME/.ssh
+    echo "${SSH_SECRET_KEY}" > $HOME/.ssh/id_rsa
+    echo "${SSH_PUBLIC_KEY}" > $HOME/.ssh/id_rsa.pub
+    chmod 600 $HOME/.ssh/id_rsa
+    chmod 600 $HOME/.ssh/id_rsa.pub
   fi
 
 if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
@@ -81,6 +81,19 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
     mkdir -p "${DUMP_FOLDER}"
     echo "Creating database dump to ${DUMP_FILE}";
     time mysqldump --max-allowed-packet=16M --single-transaction --skip-opt -e --quick --skip-disable-keys --skip-add-locks -a --add-drop-table --triggers --routines -h "${DB_HOST}" -P "${DB_PORT}" -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" | gzip -9 > "${DUMP_FILE}"
+    if [[ -n $SECRET_ENC_PASS ]] && [[ "$ENABLE_ENCRYPTION" == "1" ]]; then
+      # encrypt the db backup.
+      if [[ -n $ENCRYPTION_ALG ]]; then
+        echo "Encrypting backup at ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz"
+        openssl enc -${ENCRYPTION_ALG} -salt -in $DUMP_FILE -out ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz -pass pass:$SECRET_ENC_PASS
+        # delete the unencrypted file so that it doesn't get uploaded to the server.
+        rm $DUMP_FILE
+      else
+        echo "Encryption failed because ENCRYPTION_ALG variable is not set."
+      fi
+    else
+      echo "Encryption failed because SECRET_ENC_PASS variable is not set or because encryption is disabled."
+    fi
     echo "DONE"
 
   done
