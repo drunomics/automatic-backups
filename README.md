@@ -12,14 +12,14 @@ There are a few variables that need to be setup on platform.sh that are mandator
 2. env:AWS_BACKUP_BUCKET - holds the bucket name. Needs to be available at runtime.
 3. env:AWS_ACCESS_KEY_ID - holds the access key of a user that has access to the bucket. Needs to be available at runtime.
 4. env:AWS_SECRET_ACCESS_KEY - holds the secret access key of a user that has access to the bucket. Needs to be available at runtime. Sensitive information.
-Having awscli installed on platform.sh environment. 
+Having awscli installed on platform.sh environment.
 5. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
 6. env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
 7. env:SECRET_ENC_PASS - should contain a string password that will encrypt/decrypt the backups.
 
 # Having SFTP server as 3rd party
 
-## Prerequisites 
+## Prerequisites
 There are a few variables that need to be setup on platform.sh that are mandatory for the script to work.
 1. env:PROJECT_NAME - holds a specific machine-readable name for the project.
 2. env:SFTP_SERVER - holds the server name. Needs to be available at runtime.
@@ -27,7 +27,7 @@ There are a few variables that need to be setup on platform.sh that are mandator
 4. env:SSH_SECRET_KEY - holds the ssh secret key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
 5. env:SSH_PUBLIC_KEY - holds the ssh public key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
 6. env:SFTP_DIRECTORY - holds the directory from the server where the user has access to copy/create files.
-7. env:SFTP_PORT - holds the port of the server where the user has access to copy/create files.
+7. env:SFTP_PORT - holds the port of the server where the user has access to copy/create files (OPTIONAL).
 8. env:SFTP_DAYS_EXP - holds the number of days a backup should be help on the server. When a file passes this
    expiration date only the files created on first day of the month will be kept.
 9. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
@@ -44,7 +44,7 @@ git clone git@github.com:drunomics/automatic-backups.git
 ## Usage
 
 After cloning/copying the files in the project root directory, the scripts inside it can be used in .platform.app.yml.
-1. First in the hooks section, under build the installation for awscli(when using AWS S3) needs to be added. 
+1. First in the hooks section, under build the installation for awscli(when using AWS S3) needs to be added.
 E.g.:
 ```
 hooks:
@@ -52,8 +52,8 @@ hooks:
     build: |
         pip install futures && pip install awscli --upgrade --user 2>/dev/null
 ```
-2. Then in the mounts section a folder called drush-backups is needed. 
-3. Structure of the files directory could look like this: /files/site-name/files, or /docroot/sites/site-name/files, or /web/sites/site-name/files. If  
+2. Then in the mounts section a folder called drush-backups is needed.
+3. Structure of the files directory could look like this: /files/site-name/files, or /docroot/sites/site-name/files, or /web/sites/site-name/files. If
 4. Crons for platform.sh needs to be configured to use the scripts from automatic-backups directory. E.g.:
 ```
 crons:
@@ -66,7 +66,7 @@ crons:
 ```
 Note: better to not run db and files cron at the same time.
 
-5. Structure in S3 bucket will look like this: 
+5. Structure in S3 bucket will look like this:
    1. There will be a global parent folder with same name as the name set in env:PROJECT_NAME variable .platform.app.yml.
    2. Inside it there will be a sql directory which will hold directories for each existing branch, and inside the later one there will be the db files.
    3. Inside the parent directory will also be a folder called files-{site-name} which will hold the files of each site.
@@ -74,15 +74,15 @@ Note: better to not run db and files cron at the same time.
 6. Structure of directories on SFTP server will look like this:
    1. There will be a global folder defined in env:SFTP_DIRECTORY which will hold a folder with the files and one with the dbs.
 
-7. Clean-up of old backups: 
-   1. AWS S3: When the script is uploading the db backups on S3 it is also marking them with a certain tag. Dbs from the first day of the month are marked "archive" 
+7. Clean-up of old backups:
+   1. AWS S3: When the script is uploading the db backups on S3 it is also marking them with a certain tag. Dbs from the first day of the month are marked "archive"
    while all the other ones are marked "rolling". Based on this a lifecycle can be setup on AWS to clean-up old files.
-   Instructions on how to create on are here: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html. 
+   Instructions on how to create on are here: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html.
    The rule that needs to be added should target objects with tag sqldump and value rolling. Set an expiration limit and all the rolling tagged objects will get deleted.
    This won't apply for files directories. They are not tagged and they will get deleted if passed the expiration date.
    2. SFTP: By default dbs will be help for 180 days unless env:SFTP_DAYS_EXP is set to another value. After this expiration date only the files created on first day of the month will be kept.
 Public file won't expire because there will be just one backup for month.
 8. Ecryption/Decryption
    1. By default, db backups are not encrypted before they are uploaded to the 3rd party storage. In order to enable encryption add variable env:ENABLE_ENCRYPTION with value 1.
-In order to decrypt it, access to the platform.sh server is needed in order to get the secret password that was used to encrypt the file. 
+In order to decrypt it, access to the platform.sh server is needed in order to get the secret password that was used to encrypt the file.
    2. Decryption command: openssl enc -${ENCRYPTION_ALG} -d -in /path/to/encrypted/file -out /path/to/save/decrypted/file -pass file:/path/to/password.

@@ -109,7 +109,12 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
   # upload backups in bulk to SFTP.
   if [[ -v SFTP_SERVER ]]; then
     echo "Uploading to SFTP server."
-    rsync -Parvx -e "ssh -p $SFTP_PORT" --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+    if [[ -n "$SFTP_PORT" ]]; then
+      rsync -Parvx -e "ssh -p $SFTP_PORT" --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+    else
+      rsync -Parvx -e "ssh" --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+    fi
+
   fi
 
   # clean up remaining files after they have been uploaded
