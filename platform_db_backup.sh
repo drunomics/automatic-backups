@@ -63,7 +63,12 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
       if [[ ! -v SFTP_DAYS_EXP ]]; then
         SFTP_DAYS_EXP=180
       fi
-      ssh -p $SFTP_PORT ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+      if [[ -n "$SFTP_PORT" ]]; then
+        ssh -p $SFTP_PORT ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+      else
+        ssh ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+      fi
+
     fi
 
     # if the site name is not used for database, then default to 'database'.
@@ -85,7 +90,7 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
       # encrypt the db backup.
       if [[ -n $ENCRYPTION_ALG ]]; then
         echo "Encrypting backup at ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz"
-        openssl enc -${ENCRYPTION_ALG} -salt -in $DUMP_FILE -out ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz -pass pass:$SECRET_ENC_PASS
+        openssl enc -"$ENCRYPTION_ALG" -salt -in $DUMP_FILE -out ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz -pass pass:"$SECRET_ENC_PASS"
         # delete the unencrypted file so that it doesn't get uploaded to the server.
         rm $DUMP_FILE
       else
