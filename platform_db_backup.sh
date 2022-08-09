@@ -60,13 +60,10 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
     # get the directories from SFTP that can be deleted because they are old.
     if [[ -v SFTP_DIRECTORY && -v SITE && -v SFTP_SERVER ]]; then
       echo "Checking old backups"
-      if [[ ! -v SFTP_DAYS_EXP ]]; then
-        SFTP_DAYS_EXP=180
-      fi
       if [[ -n "$SFTP_PORT" ]]; then
-        ssh -p $SFTP_PORT ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+        ssh -p $SFTP_PORT ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +${SFTP_DAYS_EXP:180} -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
       else
-        ssh ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +$SFTP_DAYS_EXP -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+        ssh ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +${SFTP_DAYS_EXP:180} -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
       fi
 
     fi
