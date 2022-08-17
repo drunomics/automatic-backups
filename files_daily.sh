@@ -55,16 +55,21 @@ for SITE in `ls -d $SITES_DIR`; do
     fi
   elif [[ -v SFTP_SERVER ]]; then
     DAY=$(date -d "-1 day" +%Y-%m)
+    # only use port when
+    SSH_COMMAND="ssh"
+    if [[ -n "$SFTP_PORT" ]]; then
+      SSH_COMMAND="ssh -p $SFTP_PORT"
+    fi
     # first create directory with files for current day in order to be able to move the folder to SFTP.
     mkdir -p drush-backups/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
-    rsync -e "ssh -p $SFTP_PORT" -rvxl --progress drush-backups/${PROJECT_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+    rsync -e $SSH_COMMAND -rvxl --progress drush-backups/${PROJECT_NAME} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
     echo "Copying files to server."
     if [ -d "files" ]; then
-      rsync -e "ssh -p $SFTP_PORT" -avzl --progress ~/files/${SITE} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
+      rsync -e $SSH_COMMAND -avzl --progress ~/files/${SITE} ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
     elif [ -d "web" ]; then
-      rsync -e "ssh -p $SFTP_PORT" -avzl --progress ~/web/sites/${SITE}/files ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
+      rsync -e $SSH_COMMAND -avzl --progress ~/web/sites/${SITE}/files ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
     else
-      rsync -e "ssh -p $SFTP_PORT" -avzl --progress ~/docroot/sites/${SITE}/files ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
+      rsync -e $SSH_COMMAND -avzl --progress ~/docroot/sites/${SITE}/files ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/${PROJECT_NAME}/site-${SITE}/${PLATFORM_BRANCH}/${DAY}
     fi
   fi
 done
