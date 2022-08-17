@@ -85,4 +85,6 @@ Public file won't expire because there will be just one backup for month.
 8. Ecryption/Decryption
    1. By default, db backups are not encrypted before they are uploaded to the 3rd party storage. In order to enable encryption add variable env:ENABLE_ENCRYPTION with value 1.
 In order to decrypt it, access to the platform.sh server is needed in order to get the secret password that was used to encrypt the file.
-   2. Decryption command: openssl enc -${ENCRYPTION_ALG} -d -in /path/to/encrypted/file -out /path/to/save/decrypted/file -pass file:/path/to/password.
+   2. For decryption: copy a backup file from the server with "scp -r ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/drush-backups/* ./drush-backups",
+   then decrypt the file using "openssl enc -"$ENCRYPTION_ALG" -d -in drush-backups/app/$SITE/2022-m07-d27/{db_name}_20220727_135638-enc.sql.gz -out drush-backups/{db_name}_20220727_135638.sql.gz -pass pass:"$SECRET_ENC_PASS""(adapt file names by case), 
+   3. Restoring: "cd drush-backups/", "gzip -d {db_name}_20220727_135638.sql.gz", "cd ../", "drush -l $SITE sqlc < drush-backups/{DB_NAME}_20220727_135638.sql".
