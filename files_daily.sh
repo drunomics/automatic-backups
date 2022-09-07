@@ -47,7 +47,12 @@ for SITE in `ls -d $SITES_DIR`; do
 
   if [[ -v AWS_BACKUP_BUCKET ]]; then
     if [ -d "files" ]; then
-      DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
+      # because file structure has been changed, files/${SITE}/files might be files/${SITE}/public.
+      if [ -d "files/$SITE/files" ]; then
+          DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
+      else
+        DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/${SITE} s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
+      fi
     elif [ -d "web" ]; then
       DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/web/sites/${SITE}/files s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/files-${SITE}/${PLATFORM_BRANCH}/files/${DAY}/ --storage STANDARD_IA
     else
