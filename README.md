@@ -90,5 +90,7 @@ In order to decrypt it, access to the platform.sh server is needed in order to g
    then decrypt the file using "openssl enc -"$ENCRYPTION_ALG" -d -in drush-backups/app/$SITE/2022-m07-d27/{db_name}_20220727_135638-enc.sql.gz -out drush-backups/{db_name}_20220727_135638.sql.gz -pass pass:"$SECRET_ENC_PASS""(adapt file names by case),
 
 ## Restoring
-First upload the file to platform.sh: "rsync -avz path/to/backup-/file "$(platform ssh --pipe)":drush-backups".
+First upload the file to platform.sh: "rsync -avz path/to/backup/file "$(platform ssh --pipe)":drush-backups".
 Then run "platform ssh", "cd drush-backups/", "gzip -d {db_name}_20220727_135638.sql.gz", "cd ../", "drush sqlc < drush-backups/{DB_NAME}_20220727_135638.sql".
+To get the files from AWS, use this command: aws s3 cp s3://{bucket_name}/{site_name}/files-default/{env_name}/files {local_directory} --recursive
+To get files from SFTP use rsync: rsync -avz path/to/files "$(platform ssh --pipe)":files.
