@@ -7,18 +7,18 @@ fi
 
 
 function upload_dump_to_s3() {
-    aws s3 mv ${1} s3://${AWS_BACKUP_BUCKET}/${PROJECT_NAME}/sql/${PLATFORM_BRANCH}/ --storage-class STANDARD_IA
-    if [ $(date +%d) -eq "01" ]; then SQLDUMP_VALUE=archive; else SQLDUMP_VALUE=rolling; fi
-    KEY="${PROJECT_NAME}/sql/${PLATFORM_BRANCH}/$(basename ${1})"
-    aws s3api put-object-tagging --bucket ${AWS_BACKUP_BUCKET} --key ${KEY} --tagging "TagSet=[{Key=sqldump,Value=${SQLDUMP_VALUE}}]"
+    aws s3 mv "${1}" s3://"${AWS_BACKUP_BUCKET}"/"${PROJECT_NAME}"/sql/"${PLATFORM_BRANCH}"/ --storage-class STANDARD_IA
+    if [ "$(date +%d)" -eq "01" ]; then SQLDUMP_VALUE=archive; else SQLDUMP_VALUE=rolling; fi
+    KEY="${PROJECT_NAME}/sql/${PLATFORM_BRANCH}/$(basename "${1}")"
+    aws s3api put-object-tagging --bucket "${AWS_BACKUP_BUCKET}" --key "${KEY}" --tagging "TagSet=[{Key=sqldump,Value=${SQLDUMP_VALUE}}]"
 }
 
 # Be sure files directories are setup.
 if [ -d "web" ]; then
-  SITES_DIR=web/sites/*/
+  SITES_DIR="web/sites/*/"
     echo "Using ${SITES_DIR}"
 else
-  SITES_DIR=docroot/sites/*/
+  SITES_DIR="docroot/sites/*/"
   echo "Using ${SITES_DIR}"
 fi
 
@@ -36,19 +36,19 @@ fi
 
 # if sftp, prepare ssh keys.
 if [[ -v SFTP_USERNAME ]]; then
-    mkdir -p $HOME/.ssh
-    echo "${SSH_SECRET_KEY}" > $HOME/.ssh/id_rsa
-    echo "${SSH_PUBLIC_KEY}" > $HOME/.ssh/id_rsa.pub
-    chmod 600 $HOME/.ssh/id_rsa
-    chmod 600 $HOME/.ssh/id_rsa.pub
+    mkdir -p "$HOME"/.ssh
+    echo "${SSH_SECRET_KEY}" > "$HOME"/.ssh/id_rsa
+    echo "${SSH_PUBLIC_KEY}" > "$HOME"/.ssh/id_rsa.pub
+    chmod 600 "$HOME"/.ssh/id_rsa
+    chmod 600 "$HOME"/.ssh/id_rsa.pub
   fi
 
 if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
-  for SITE in `ls -d $SITES_DIR`; do
-    SITE=`basename $SITE`
+  for SITE in $SITES_DIR; do
+    SITE=$(basename "$SITE")
     database=$SITE
 
-    if [ $NUMBER_OF_SITES -gt 1 ]; then
+    if [ "$NUMBER_OF_SITES" -gt 1 ]; then
       if [[ $SITE == 'all' ]]; then
         continue;
       fi
@@ -61,23 +61,23 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
     if [[ -v SFTP_DIRECTORY && -v SITE && -v SFTP_SERVER ]]; then
       echo "Checking old backups"
       if [[ -n "$SFTP_PORT" ]]; then
-        ssh -p $SFTP_PORT ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +${SFTP_DAYS_EXP:180} -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+        ssh -p "$SFTP_PORT" "${SFTP_USERNAME}"@"${SFTP_SERVER}" "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +${SFTP_DAYS_EXP:180} -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
       else
-        ssh ${SFTP_USERNAME}@${SFTP_SERVER} "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +${SFTP_DAYS_EXP:180} -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
+        ssh "${SFTP_USERNAME}"@"${SFTP_SERVER}" "find ~/$SFTP_DIRECTORY/drush-backups/$PROJECT_NAME -mindepth 1 -type d -mtime +${SFTP_DAYS_EXP:180} -printf '%p\n' |grep -v '\-d01' |xargs -I {} rm -r -v \"{}\""
       fi
 
     fi
 
     # if the site name is not used for database, then default to 'database'.
-    if [[ "$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].host")" == null ]]; then
+    if [[ "$(echo "$PLATFORM_RELATIONSHIPS" | base64 --decode | jq -r ".${database}[0].host")" == null ]]; then
       database='database'
     fi
 
-    DB_HOST=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].host")
-    DB_PORT=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].port")
-    DB_NAME=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].path")
-    DB_USER=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].username")
-    DB_PASS=$(echo $PLATFORM_RELATIONSHIPS | base64 --decode | jq -r ".${database}[0].password")
+    DB_HOST=$(echo "$PLATFORM_RELATIONSHIPS" | base64 --decode | jq -r ".${database}[0].host")
+    DB_PORT=$(echo "$PLATFORM_RELATIONSHIPS" | base64 --decode | jq -r ".${database}[0].port")
+    DB_NAME=$(echo "$PLATFORM_RELATIONSHIPS" | base64 --decode | jq -r ".${database}[0].path")
+    DB_USER=$(echo "$PLATFORM_RELATIONSHIPS" | base64 --decode | jq -r ".${database}[0].username")
+    DB_PASS=$(echo "$PLATFORM_RELATIONSHIPS" | base64 --decode | jq -r ".${database}[0].password")
     DUMP_FOLDER=$HOME/drush-backups/${PROJECT_NAME}/${SITE}/$(date +%Y-m%m-d%d)
     DUMP_FILE=${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S).sql.gz
     mkdir -p "${DUMP_FOLDER}"
@@ -87,9 +87,9 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
       # encrypt the db backup.
       if [[ -n $ENCRYPTION_ALG ]]; then
         echo "Encrypting backup at ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz"
-        openssl enc -"$ENCRYPTION_ALG" -salt -in $DUMP_FILE -out ${DUMP_FOLDER}/${DB_NAME}_$(date +%Y%m%d_%H%M%S)-enc.sql.gz -pass pass:"$SECRET_ENC_PASS"
+        openssl enc -"$ENCRYPTION_ALG" -salt -in "$DUMP_FILE" -out "${DUMP_FOLDER}"/"${DB_NAME}"_"$(date +%Y%m%d_%H%M%S)"-enc.sql.gz -pass pass:"$SECRET_ENC_PASS"
         # delete the unencrypted file so that it doesn't get uploaded to the server.
-        rm $DUMP_FILE
+        rm "$DUMP_FILE"
       else
         echo "Encryption failed because ENCRYPTION_ALG variable is not set."
       fi
@@ -101,10 +101,10 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
   done
 
   # loop through backups and upload to S3/SFTP until none left.
-  find $HOME/drush-backups -type f -name *gz -print | while read dump;
+  find "$HOME"/drush-backups -type f -name "*gz" -print | while read -r dump;
   do
     if [[ -v AWS_BACKUP_BUCKET ]]; then
-      upload_dump_to_s3 $dump;
+      upload_dump_to_s3 "$dump";
     fi
   done
 
@@ -112,13 +112,13 @@ if [[ -v AWS_BACKUP_BUCKET || -v SFTP_SERVER ]]; then
   if [[ -v SFTP_SERVER ]]; then
     echo "Uploading to SFTP server."
     if [[ -n "$SFTP_PORT" ]]; then
-      rsync -Parvx -e "ssh -p $SFTP_PORT" --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+      rsync -Parvx -e "ssh -p $SFTP_PORT" --progress ./drush-backups "${SFTP_USERNAME}"@"${SFTP_SERVER}":~/"${SFTP_DIRECTORY}"
     else
-      rsync -Parvx -e "ssh" --progress ./drush-backups ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}
+      rsync -Parvx -e "ssh" --progress ./drush-backups "${SFTP_USERNAME}"@"${SFTP_SERVER}":~/"${SFTP_DIRECTORY}"
     fi
 
   fi
 
   # clean up remaining files after they have been uploaded
-  find $HOME/drush-backups -mindepth 1 -type d -print0 |xargs --null -I {} rm -r -v "{}"
+  find "$HOME"/drush-backups -mindepth 1 -type d -print0 |xargs --null -I {} rm -r -v "{}"
 fi
