@@ -3,6 +3,7 @@
 # check if web or docroot is used and get the appropriate one.
 if [ -d "files" ]; then
   SITES_DIR="files/*/"
+  echo "Using  ${SITES_DIR}"
 elif [ -d "web" ]; then
   SITES_DIR="web/sites/*/"
   echo "Using ${SITES_DIR}"
@@ -42,11 +43,12 @@ for SITE in $SITES_DIR; do
 
   if [[ -v AWS_BACKUP_BUCKET ]]; then
     if [ -d "files" ]; then
-      # because file structure has been changed, files/${SITE}/files might be files/${SITE}/public.
+      # because file structure has been changed, files/${SITE}/files might be files/default/public.
       if [ -d "files/$SITE/files" ]; then
           DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/"${SITE}"/files s3://"${AWS_BACKUP_BUCKET}"/"${PROJECT_NAME}"/files-"${SITE}"/"${PLATFORM_BRANCH}"/files/"${DAY}"/ --storage STANDARD_IA
       else
-        DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files/"${SITE}" s3://"${AWS_BACKUP_BUCKET}"/"${PROJECT_NAME}"/files-"${SITE}"/"${PLATFORM_BRANCH}"/files/"${DAY}"/ --storage STANDARD_IA
+        # It means that there is just the default directory so upload it to AWS.
+        DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/files s3://"${AWS_BACKUP_BUCKET}"/"${PROJECT_NAME}"/files/"${PLATFORM_BRANCH}"/"${DAY}"/ --storage STANDARD_IA
       fi
     elif [ -d "web" ]; then
       DAY=$(date -d "-1 day" +%Y-%m) && aws s3 sync ~/web/sites/"${SITE}"/files s3://"${AWS_BACKUP_BUCKET}"/"${PROJECT_NAME}"/files-"${SITE}"/"${PLATFORM_BRANCH}"/files/"${DAY}"/ --storage STANDARD_IA
