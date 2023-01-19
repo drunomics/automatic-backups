@@ -15,7 +15,7 @@ There are a few variables that need to be setup on platform.sh that are mandator
 Having awscli installed on platform.sh environment.
 5. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups. To get a complete list, run 'openssl list -cipher-algorithms'.
 6. env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes. Defaults to 0.
-7. env:SECRET_ENC_PASS - should contain a string password that will encrypt/decrypt the backups.
+11. env:SECRET_ENC_PASS - should contain a secure string password that will encrypt/decrypt the backups. Sensitive variable.
 
 # Having SFTP server as 3rd party
 
@@ -32,7 +32,7 @@ There are a few variables that need to be setup on platform.sh that are mandator
    expiration date only the files created on first day of the month will be kept.
 9. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
 10. env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
-11. env:SECRET_ENC_PASS - should contain a string password that will encrypt/decrypt the backups.
+11. env:SECRET_ENC_PASS - should contain a secure string password that will encrypt/decrypt the backups. Sensitive variable.
 
 
 ## Installation
