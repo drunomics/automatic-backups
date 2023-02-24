@@ -28,7 +28,7 @@ There are a few variables that need to be setup on platform.sh that are mandator
 5. env:SSH_PUBLIC_KEY - holds the ssh public key of the user that has access to the server. Needs to be available at runtime. Sensitive information.
 6. env:SFTP_DIRECTORY - holds the directory from the server where the user has access to copy/create files.
 7. env:SFTP_PORT - holds the port of the server where the user has access to copy/create files (OPTIONAL).
-8. env:SFTP_DAYS_EXP - holds the number of days a backup should be help on the server. When a file passes this
+8. env:SFTP_DAYS_EXP - holds the number of days a backup should be held on the server. When a file passes this
    expiration date only the files created on first day of the month will be kept.
 9. env:ENCRYPTION_ALG - holds the encryption algorithm used to encrypt db backups.
 10. env:ENABLE_ENCRYPTION - should hold 0 for No and 1 for Yes.
@@ -75,22 +75,25 @@ Note: better to not run db and files cron at the same time.
 6. Structure of directories on SFTP server will look like this:
    1. There will be a global folder defined in env:SFTP_DIRECTORY which will hold a folder with the files and one with the dbs.
 
-7. Clean-up of old backups:
-   1. AWS S3: When the script is uploading the db backups on S3 it is also marking them with a certain tag. Dbs from the first day of the month are marked "archive"
-   while all the other ones are marked "rolling". Based on this a lifecycle can be setup on AWS to clean-up old files.
-   Instructions on how to create on are here: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html.
-   The rule that needs to be added should target objects with tag sqldump and value rolling. Set an expiration limit and all the rolling tagged objects will get deleted.
-   This won't apply for files directories. They are not tagged and they will get deleted if passed the expiration date.
-   2. SFTP: By default dbs will be help for 180 days unless env:SFTP_DAYS_EXP is set to another value. After this expiration date only the files created on first day of the month will be kept.
-Public file won't expire because there will be just one backup for month.
-8. Ecryption/Decryption
+7. Encryption/Decryption
    1. By default, db backups are not encrypted before they are uploaded to the 3rd party storage. In order to enable encryption add variable env:ENABLE_ENCRYPTION with value 1.
 In order to decrypt it, access to the platform.sh server is needed in order to get the secret password that was used to encrypt the file.
    2. For decryption: copy a backup file from the server with "scp -r ${SFTP_USERNAME}@${SFTP_SERVER}:~/${SFTP_DIRECTORY}/drush-backups/* ./drush-backups",
    then decrypt the file using "openssl enc -"$ENCRYPTION_ALG" -d -in drush-backups/app/$SITE/2022-m07-d27/{db_name}_20220727_135638-enc.sql.gz -out drush-backups/{db_name}_20220727_135638.sql.gz -pass pass:"$SECRET_ENC_PASS""(adapt file names by case),
 
 ## Restoring
-First upload the file to platform.sh: "rsync -avz path/to/backup/file "$(platform ssh --pipe)":drush-backups".
-Then run "platform ssh", "cd drush-backups/", "gzip -d {db_name}_20220727_135638.sql.gz", "cd ../", "drush sqlc < drush-backups/{DB_NAME}_20220727_135638.sql".
-To get the files from AWS, use this command: aws s3 cp s3://{bucket_name}/{site_name}/files-default/{env_name}/files {local_directory} --recursive
-To get files from SFTP use rsync: rsync -avz path/to/files "$(platform ssh --pipe)":files.
+First upload the file to platform.sh: 
+``` rsync -avz path/to/backup/file "$(platform ssh --pipe)":drush-backups ```
+Then run ```platform ssh```, ```cd drush-backups/```, ```gzip -d {db_name}_20220727_135638.sql.gz```, ```cd ../```, 
+```drush sqlc < drush-backups/{DB_NAME}_20220727_135638.sql```.
+To get the files from AWS, use this command: ```aws s3 cp s3://{bucket_name}/{site_name}/files-default/{env_name}/files {local_directory} --recursive```
+To get files from SFTP use rsync: ```rsync -avz path/to/files "$(platform ssh --pipe)":files```.
+
+## Backup rotation strategy
+1. AWS S3: When the script is uploading the db backups on S3 it is also marking them with a certain tag. Dbs from the first day of the month are marked "archive"
+   while all the other ones are marked "rolling". Based on this a lifecycle can be setup on AWS to clean-up old files.
+   Instructions on how to create on are here: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-set-lifecycle-configuration-intro.html.
+   The rule that needs to be added should target objects with tag sqldump and value rolling. Set an expiration limit and all the rolling tagged objects will get deleted.
+   This won't apply for files directories. They are not tagged and they will get deleted if passed the expiration date.
+2. SFTP: By default dbs will be help for 180 days unless env:SFTP_DAYS_EXP is set to another value. After this expiration date only the files created on first day of the month will be kept.
+   Public files won't expire because there will be just one backup for month.
